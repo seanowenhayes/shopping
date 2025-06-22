@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useXR } from '@react-three/xr'
-import { Group, TextureLoader, MeshStandardMaterial } from 'three'
+import { Group, TextureLoader } from 'three'
 import { useLoader } from '@react-three/fiber'
 
 export interface ProductProps {
@@ -23,14 +23,34 @@ export function Product({
   const { session } = useXR()
   const ref = useRef<Group>(null)
   const [hovered, setHovered] = useState(false)
-  
-  // Load texture if imageUrl is provided
-  let texture = null
+  const fallbackImage = "/images/lv-bag-placeholder.jpg"
+  const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl)
+
+  // Load texture from currentImageUrl
+  let texture
   try {
-    texture = useLoader(TextureLoader, imageUrl)
+    texture = useLoader(TextureLoader, currentImageUrl)
   } catch (error) {
-    console.warn('Failed to load texture:', error)
+    // This block won't catch async errors, so we use useEffect below
+    texture = undefined
   }
+
+  // If the image fails to load, fallback to placeholder
+  useEffect(() => {
+    let isMounted = true
+    const loader = new TextureLoader()
+    loader.load(
+      currentImageUrl,
+      () => {},
+      undefined,
+      (err) => {
+        if (isMounted && currentImageUrl !== fallbackImage) {
+          setCurrentImageUrl(fallbackImage)
+        }
+      }
+    )
+    return () => { isMounted = false }
+  }, [currentImageUrl, fallbackImage])
   
   const handleClick = () => {
     if (session) {

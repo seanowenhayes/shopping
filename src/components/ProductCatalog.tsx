@@ -45,10 +45,6 @@ export function ProductCatalog() {
       .then(data => setProducts(data))
   }, [])
 
-  useEffect(() => {
-    console.log({products, len: products.length})
-  }, [products])
-
   return (
     <group>
       {products.map((product, i) => (
